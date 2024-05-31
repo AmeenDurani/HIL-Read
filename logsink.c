@@ -21,15 +21,16 @@ int main(void){
     num = serialDataAvail(handle);
     if(num > 0){
       for(int i = index; i<num; i++){
-        buffer[i] = (char)serialGetChar(handle);
+        if(serialGetChar(handle) == '\n'){
+          buffer[255] = "\0";
+          printf("%s\n", buffer);
+          memset(buffer, 0, sizeof(buffer));
+        }
+        else {
+          buffer[i] = (char)serialGetChar(handle);
+        }
       }
       index += num;
-      if(buffer[index - 1] == '\n'){
-        buffer[255] = "\0";
-        printf("%s\n", buffer);
-        memset(buffer, 0, sizeof(buffer));
-      }
-      
     }
     else if(num < 0){
       printf("Data Detch Error :: %d\n", errno);
