@@ -45,7 +45,6 @@ int main(void){
   }
   // Cleanup
   serialClose(handle);
-  printf("%s\n", buffer);
-  printf("end\n");
+  
   exit(0);
 }
