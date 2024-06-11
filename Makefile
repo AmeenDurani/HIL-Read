@@ -13,5 +13,5 @@ logsinkfor:
 	./logsinkfor
 logsinkmgr:
 	rm -f logsinkmgr
-	g++ -o logsinkmgr LogSink_Thread.cpp -lwiringPi
+	g++ -std=c++11  -o logsinkmgr LogSink_Thread.cpp -lwiringPi -pthread
 	./logsinkmgr
