@@ -67,16 +67,33 @@ void ReadPort(struct pollfd UARTtrigger){
     }
 }
 
-void WriteFile(){
+void WriteFile(struct pollfd UARTtrigger){
+    /*
     while(!exitcall){
-        if(key.try_lock()){
+        int ret = poll(&UARTtrigger, 1, -1);
+        if(ret == 1){
+            if(key.try_lock()){
+                printf("Writing File\n");
+                LogSink<< buffer;
+                buffer = "";
+                key.unlock();
+            }
+        }
+        
+        //std::this_thread::sleep_for(std::chrono::seconds(1));
+        
+    }
+    */
+   while(!exitcall){
+    if(key.try_lock()){
             printf("Writing File\n");
             LogSink<< buffer;
             buffer = "";
             key.unlock();
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
+   }
+
 }
 
 void cleanUp(){
@@ -86,15 +103,17 @@ void cleanUp(){
 
 int main(){
     Setup();
-    struct pollfd UARTtrigger;
-    UARTtrigger.fd = serialPort;
-    UARTtrigger.events = POLLIN;
+    struct pollfd UARTtrigger[2];
+    UARTtrigger[0].fd = serialPort;
+    UARTtrigger[0].events = POLLIN;
+    UARTtrigger[1].fd = serialPort;
+    UARTtrigger[1].events = POLLOUT;
 
-    thread ReadUART(ReadPort, UARTtrigger);
-    thread WriteOUT(WriteFile);
+    thread ReadUART(ReadPort, UARTtrigger[0]);
+    thread WriteOUT(WriteFile, UARTtrigger[1]);
     printf("Threads Started...\n\n");
 
-    while(counter< 50){}
+    while(millis()<10000){}
     exitcall = true;
     ReadUART.join();
     WriteOUT.join();
