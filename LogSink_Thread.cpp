@@ -21,9 +21,11 @@ const int BAUD_RATE = 115200;
 const string OUTPUT_FILE="logsink.txt";
 const int serialPort = serialOpen(Device_Port,BAUD_RATE);
 ofstream LogSink(OUTPUT_FILE);
+
 string buffer = "";
 mutex key;
 bool exitcall=0;
+int counter = 0;
 
 //Functions...
 bool Setup(){
@@ -50,11 +52,15 @@ void ReadPort(struct pollfd UARTtrigger){
             check = serialDataAvail(serialPort);
             if(check>=1 && key.try_lock()){
                 printf("Reading Port\n");
-                buffer += serialGetchar(serialPort);
+                char data=serialGetchar(serialPort);
+                buffer += data;
                 key.unlock();
+                if(data == '\n'){
+                    counter++;
+                }
             }
             else if(check == -1){
-                cout<<"Can't Read Port! Errno:: "<<errno;
+                cout<<"Can't Read Port! Errno:: "<<errno<<endl;
                 exit(-1);
             }
         }
@@ -88,7 +94,7 @@ int main(){
     thread WriteOUT(WriteFile);
     printf("Threads Started...\n\n");
 
-    while(millis()<30000){}
+    while(counter< 50){}
     exitcall = true;
     ReadUART.join();
     WriteOUT.join();
