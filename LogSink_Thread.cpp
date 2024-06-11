@@ -40,22 +40,23 @@ bool Setup(){
     return true;
 }
 
-void ReadPort(){
-    int check;
+void ReadPort(struct pollfd UARTtrigger){
+    int check, ret;
 
     while(!exitcall){
-        check = serialDataAvail(serialPort);
-        if(check>=1 && key.try_lock()){
-            printf("Reading Port\n");
-            buffer += serialGetchar(serialPort);
-            key.unlock();
-        }
-        else if(check == -1){
-            cout<<"Can't Read Port! Errno:: "<<errno;
-            exit(-1);
-        }
-        else if(check ==0){
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        ret = poll(&UARTtrigger, 1, -1);
+
+        if(ret == 1){
+            check = serialDataAvail(serialPort);
+            if(check>=1 && key.try_lock()){
+                printf("Reading Port\n");
+                buffer += serialGetchar(serialPort);
+                key.unlock();
+            }
+            else if(check == -1){
+                cout<<"Can't Read Port! Errno:: "<<errno;
+                exit(-1);
+            }
         }
     }
 }
@@ -79,8 +80,11 @@ void cleanUp(){
 
 int main(){
     Setup();
+    struct pollfd UARTtrigger;
+    UARTtrigger.fd = serialPort;
+    UARTtrigger.events = POLLIN;
 
-    thread ReadUART(ReadPort);
+    thread ReadUART(ReadPort, UARTtrigger);
     thread WriteOUT(WriteFile);
     printf("Threads Started...\n\n");
 
