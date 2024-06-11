@@ -11,3 +11,7 @@ logsinkfor:
 	rm -f logsinkfor
 	gcc -o logsinkfor LogSink_For.c -lwiringPi
 	./logsinkfor
+logsinkmgr:
+	rm -f logsinkmgr
+	g++ -o logsinkmgr LogSink_Thread.cpp -lwiringPi
+	./logsinkmgr
