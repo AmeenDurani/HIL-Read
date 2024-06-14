@@ -4,6 +4,7 @@
 #include <wiringSerial.h>
 #include <poll.h>
 #include <iostream>
+#include <ctime>
 
 
 LogSink::LogSink(std::string uartPort, int baudRate, std::string outputFile){
@@ -36,6 +37,11 @@ void LogSink::uartReadThread(){
     uartWait.fd = m_serialFd;
     uartWait.events = POLLIN;
 
+    time_t rawtime;
+    struct tm * timeinfo;
+    char timer [80];
+    std::string times;
+
 
     while(m_isRunning){
         int ret = poll(&uartWait, 1, -1);
@@ -51,6 +57,12 @@ void LogSink::uartReadThread(){
                     char character= serialGetchar(m_serialFd);
                     buffer += character;
                     if(character == '\n'){
+                        time(&rawtime);
+                        timeinfo = localtime(&rawtime);
+                        strftime (timer, 80, "[%r]", timeinfo);    
+                        times = timer;
+                        buffer = "["+times+"] "+buffer;
+
                         m_queueLock.lock();
                         m_logQueue.push(buffer);
                         m_queueLock.unlock();
@@ -75,7 +87,7 @@ void LogSink::writeFileThread(){
             std::string temp = m_logQueue.front();
             m_logQueue.pop();
             m_queueLock.unlock();
-            std::cout<<temp;
+            //std::cout<<temp;
             m_outputFile<<temp;
         }
     }
