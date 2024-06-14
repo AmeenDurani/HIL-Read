@@ -1,3 +1,4 @@
+/*
 //Includes...
 #include <cstdlib>
 #include <fstream>
@@ -6,11 +7,13 @@
 #include <wiringSerial.h>
 #include <errno.h>
 #include <poll.h>
-#include <queue>
 #include <string>
 #include <mutex>
 #include <thread>
-#include<chrono>
+#include <chrono>
+#include <condition_variable>  
+#include <semaphore>
+#include <queue>
 
 using namespace std;
 
@@ -21,11 +24,14 @@ const int BAUD_RATE = 115200;
 const string OUTPUT_FILE="logsink.txt";
 const int serialPort = serialOpen(Device_Port,BAUD_RATE);
 ofstream LogSink(OUTPUT_FILE);
-
 string buffer = "";
-mutex key;
+queue <string> buff;
 bool exitcall=0;
-int counter = 0;
+mutex locker;
+condition_variable nodata;
+
+counting_semaphore semaphore(0);
+
 
 //Functions...
 bool Setup(){
@@ -38,62 +44,54 @@ bool Setup(){
         cout << "Could not open serial port. Errno :: "<< errno << endl;
         exit(-1);
     }
+
     cout<<"Setup Passed"<<endl;
     return true;
 }
 
-void ReadPort(struct pollfd UARTtrigger){
-    int check, ret;
-
+void ReadPort(pollfd UARTTrigger){
+    int counter =0;
     while(!exitcall){
-        ret = poll(&UARTtrigger, 1, -1);
-
+        int ret = poll(&UARTTrigger, 1, -1);
         if(ret == 1){
-            check = serialDataAvail(serialPort);
-            if(check>=1 && key.try_lock()){
-                printf("Reading Port\n");
-                char data=serialGetchar(serialPort);
-                buffer += data;
-                key.unlock();
-                if(data == '\n'){
-                    counter++;
-                }
-            }
-            else if(check == -1){
-                cout<<"Can't Read Port! Errno:: "<<errno<<endl;
+
+            counter = serialDataAvail(serialPort);
+            if(counter < 0){
+                printf("Couldn't Read Data, Errno %d\n", errno);
                 exit(-1);
             }
-        }
-    }
-}
-
-void WriteFile(struct pollfd UARTtrigger){
-    /*
-    while(!exitcall){
-        int ret = poll(&UARTtrigger, 1, -1);
-        if(ret == 1){
-            if(key.try_lock()){
-                printf("Writing File\n");
-                LogSink<< buffer;
-                buffer = "";
-                key.unlock();
+            else if(counter>=0){
+                for(int i = 0; i<counter; i++){
+                    char character= serialGetchar(serialPort);
+                    buffer += character;
+                    if(character == '\n'){
+                        locker.lock();
+                        buff.push(buffer);
+                        locker.unlock();
+                        buffer = "";
+                        semaphore.release();
+                    }
+                }
+    
             }
         }
-        
-        //std::this_thread::sleep_for(std::chrono::seconds(1));
-        
     }
-    */
-   while(!exitcall){
-    if(key.try_lock()){
-            printf("Writing File\n");
-            LogSink<< buffer;
-            buffer = "";
-            key.unlock();
-        }
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-   }
 
+   semaphore.release(); 
+}
+
+void WriteFile(){
+    while(!exitcall){
+        semaphore.acquire();
+        
+        if(!buff.empty()){
+            locker.lock();
+            string temp = buff.front();
+            buff.pop();
+            locker.unlock();
+            LogSink<<temp;
+        }
+    }
 }
 
 void cleanUp(){
@@ -103,14 +101,14 @@ void cleanUp(){
 
 int main(){
     Setup();
-    struct pollfd UARTtrigger[2];
-    UARTtrigger[0].fd = serialPort;
-    UARTtrigger[0].events = POLLIN;
-    UARTtrigger[1].fd = serialPort;
-    UARTtrigger[1].events = POLLOUT;
+    
+    struct pollfd UARTtrigger;
+    UARTtrigger.fd = serialPort;
+    UARTtrigger.events = POLLIN;
+    
 
-    thread ReadUART(ReadPort, UARTtrigger[0]);
-    thread WriteOUT(WriteFile, UARTtrigger[1]);
+    thread ReadUART(ReadPort, UARTtrigger);
+    thread WriteOUT(WriteFile);
     printf("Threads Started...\n\n");
 
     while(millis()<10000){}
@@ -120,4 +118,23 @@ int main(){
 
     cleanUp();
     exit(0);
+}
+*/
+#include "logsink.h"
+#include <iostream>
+#include <unistd.h>
+
+int main(){
+    if(wiringPiSetup() == -1){
+        std::cout << "Could not complete wiringPiSetup. Errno :: "<< errno << std::endl;
+        exit(-1);
+   }
+
+    std::cout<<"Setup Passed"<<std::endl;
+    
+    LogSink testLogSink("/dev/ttyS0", 115200, "logsink.txt");
+    testLogSink.start();
+    sleep(60);
+    testLogSink.stop();
+    return 0;
 }
