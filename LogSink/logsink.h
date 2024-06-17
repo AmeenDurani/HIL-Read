@@ -27,5 +27,6 @@ class LogSink {
     ~LogSink();
     int start();
     void stop();
+    void runFor(int seconds);
 
 };

@@ -5,7 +5,7 @@
 #include <poll.h>
 #include <iostream>
 #include <ctime>
-
+#include <unistd.h>
 
 LogSink::LogSink(std::string uartPort, int baudRate, std::string outputFile){
     m_outputFile.open(outputFile);
@@ -61,7 +61,7 @@ void LogSink::uartReadThread(){
                         timeinfo = localtime(&rawtime);
                         strftime (timer, 80, "[%r]", timeinfo);    
                         times = timer;
-                        buffer = "["+times+"] "+buffer;
+                        buffer = times+" "+buffer;
 
                         m_queueLock.lock();
                         m_logQueue.push(buffer);
@@ -104,4 +104,15 @@ void LogSink::stop(){
     m_isRunning = false;
     m_readThread.join();
     m_writeThread.join();
+    m_outputFile.close();
+}
+
+void LogSink::runFor(int seconds){
+    if(wiringPiSetup() == -1){
+        std::cout << "Could not complete wiringPiSetup. Errno :: "<< errno << std::endl;
+        exit(-1);
+   }
+   this->start();
+   sleep(seconds);
+   this->stop();
 }
