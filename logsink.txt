@@ -1,15 +1,16 @@
-[01:08:25 PM] ERROR -> /Users/ameendurani/Desktop/Orbital-Firmware/OBC-firmware/obc/app/drivers/sdcard/sdc_bdev.c:416 - 108
-[01:08:26 PM] ERROR -> /Users/ameendurani/Desktop/Orbital-Firmware/OBC-firmware/obc/app/modules/state_mgr/state_mgr.c:71 - 709
-[01:08:26 PM] ERROR -> /Users/ameendurani/Desktop/Orbital-Firmware/OBC-firmware/obc/app/modules/logger/logger.c:94 - 5
-[01:08:26 PM] ERROR -> /Users/ameendurani/Desktop/Orbital-Firmware/OBC-firmware/obc/app/drivers/cc1120/cc1120.c:225 - 502
-[01:08:26 PM] ERROR -> /Users/ameendurani/Desktop/Orbital-Firmware/OBC-firmware/obc/app/drivers/cc1120/cc1120.c:409 - 502
-[01:08:26 PM] ERROR -> /Users/ameendurani/Desktop/Orbital-Firmware/OBC-firmware/obc/app/modules/comms_link_mgr/comms_manager.c:297 - 502
-[01:08:26 PM] ERROR -> /Users/ameendurani/Desktop/Orbital-Firmware/OBC-firmware/obc/app/sys/fs_wrapper/obc_reliance_fs.c:38 - 1022
-[01:08:26 PM] ERROR -> /Users/ameendurani/Desktop/Orbital-Firmware/OBC-firmware/obc/app/modules/telemetry_mgr/telemetry_fs_utils.c:17 - 710
-[01:08:26 PM] ERROR -> /Users/ameendurani/Desktop/Orbital-Firmware/OBC-firmware/obc/app/modules/telemetry_mgr/telemetry_manager.c:65 - 710
-[01:08:26 PM] ERROR -> /Users/ameendurani/Desktop/Orbital-Firmware/OBC-firmware/obc/app/modules/telemetry_mgr/telemetry_fs_utils.c:33 - 701
-[01:08:26 PM] ERROR -> /Users/ameendurani/Desktop/Orbital-Firmware/OBC-firmware/obc/app/modules/telemetry_mgr/telemetry_fs_utils.c:98 - 701
-[01:08:26 PM] ERROR -> /Users/ameendurani/Desktop/Orbital-Firmware/OBC-firmware/obc/app/modules/telemetry_mgr/telemetry_manager.c:68 - 701
-[01:08:26 PM] ERROR -> /Users/ameendurani/Desktop/Orbital-Firmware/OBC-firmware/obc/app/modules/telemetry_mgr/telemetry_fs_utils.c:127 - 2
-[01:08:26 PM] ERROR -> /Users/ameendurani/Desktop/Orbital-Firmware/OBC-firmware/obc/app/modules/telemetry_mgr/telemetry_manager.c:74 - 2
-[01:08:31 PM] ERROR -> /Users/ameendurani/Desktop/Orbital-Firmware/OBC-firmware/obc/app/drivers/sdcard/sdc_bdev.c:416 - 108
+No	Timestamp	Log
+1	14:45:57	
+2	14:45:58	 
+3	14:45:59	 
+4	14:46:00	 
+5	14:46:01	 
+6	14:46:02	 
+7	14:46:03	 
+8	14:46:04	 
+9	14:46:05	 
+10	14:46:06	 
+11	14:46:07	 
+12	14:46:08	 
+13	14:46:09	 
+14	14:46:10	 
+15	14:46:11	 
