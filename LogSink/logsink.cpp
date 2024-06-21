@@ -6,6 +6,7 @@
 #include <iostream>
 #include <ctime>
 #include <unistd.h>
+#include <sqlite3.h>
 
 LogSink::LogSink(std::string uartPort, int baudRate, std::string outputFile){
     m_outputFile.open(outputFile);
@@ -37,10 +38,10 @@ void LogSink::uartReadThread(){
     uartWait.fd = m_serialFd;
     uartWait.events = POLLIN;
 
-    time_t rawtime;
-    struct tm * timeinfo;
-    char timer [80];
-    std::string times;
+    // time_t rawtime;
+    // struct tm * timeinfo;
+    // char timer [80];
+    // std::string times;
 
 
     while(m_isRunning){
@@ -57,13 +58,14 @@ void LogSink::uartReadThread(){
                     char character= serialGetchar(m_serialFd);
                     buffer += character;
                     if(character == '\n'){
-                        time(&rawtime);
-                        timeinfo = localtime(&rawtime);
-                        strftime (timer, 80, "[%r]", timeinfo);    
-                        times = timer;
-                        buffer = times+" "+buffer;
+                        // time(&rawtime);
+                        // timeinfo = localtime(&rawtime);
+                        // strftime (timer, 80, "[%r]", timeinfo);    
+                        // times = timer;
+                        //buffer = times+" "+buffer;
 
                         m_queueLock.lock();
+                        //m_logQueue.push(times);
                         m_logQueue.push(buffer);
                         m_queueLock.unlock();
                         buffer = "";
@@ -78,20 +80,82 @@ void LogSink::uartReadThread(){
    m_queueSemaphore.release(); 
 }
 void LogSink::writeFileThread(){
+    sqlite3* db;
+    const char* sql_start=  "CREATE TABLE IF NOT EXISTS LOGTABLE ("
+                            "NO INTEGER PRIMARY KEY AUTOINCREMENT,"
+                            "TIMESTAMP TEXT NOT NULL DEFAULT (time('now', 'localtime')), "
+                            "LOG TEXT);";
+    const char* sql_append = "INSERT INTO LOGTABLE (LOG) VALUES (?);";
+    const char* sql_outfile = "SELECT * FROM LOGTABLE;";
+    int rc;
+    char* errMsg = nullptr;
+    sqlite3_stmt* stmt;
+    const char* sql_log;
+
+    rc = sqlite3_open("logger.db", &db);
+    if (rc != SQLITE_OK) {
+        std::cerr << "Can't open database: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_close(db);
+        exit(-1);
+    } else {
+        std::cout << "DB opened successfully" << std::endl;
+    }
+
+    rc = sqlite3_exec(db, sql_start, nullptr, nullptr,&errMsg);
+    if(rc != SQLITE_OK){
+        std::cerr<<"FAILED TABLE CREATION: "<< errMsg <<std::endl;
+        sqlite3_free(errMsg);
+        sqlite3_close(db);
+        exit(-1);
+    } else{
+        std::cout<<"Table Creation Success\n";
+    }
 
     while(m_isRunning){
         m_queueSemaphore.acquire();
         
         if(!m_logQueue.empty()){
+
+            rc = sqlite3_prepare_v2(db, sql_append, -1, &stmt, nullptr);
+
+            m_queueLock.lock();
+            sql_log = (m_logQueue.front()).c_str();
+            m_logQueue.pop();
+            m_queueLock.unlock();
+
+            if(rc == SQLITE_OK){
+                printf("Log -> %s\n", sql_log);
+                sqlite3_bind_text(stmt, 1, sql_log, -1, SQLITE_TRANSIENT);
+                rc = sqlite3_step(stmt);
+                if(rc != SQLITE_DONE){
+                    std::cerr << "Error inserting data: "<< sqlite3_errmsg(db) <<std::endl;
+                    sqlite3_close(db);
+                    exit(-1);
+                }
+                sqlite3_finalize(stmt);
+            }
+            /*
             m_queueLock.lock();
             std::string temp = m_logQueue.front();
             m_logQueue.pop();
             m_queueLock.unlock();
-            //std::cout<<temp;
             m_outputFile<<temp;
-        }
-    }
+            */
 
+        }
+
+    }
+    printf("writing to file\n");
+    rc = sqlite3_prepare_v2(db, sql_outfile, -1, &stmt, nullptr);
+    m_outputFile << "No\tTimestamp\tLog\n";
+    while(sqlite3_step(stmt) == SQLITE_ROW){
+        int no = sqlite3_column_int(stmt,0);
+        const unsigned char* timestamp = sqlite3_column_text(stmt,1);
+        const unsigned char* logg = sqlite3_column_text(stmt, 2);
+        m_outputFile << no <<"\t"<<timestamp<<"\t"<<logg<<"\n";
+    }
+    printf("Closed db\n");
+    sqlite3_close(db);
 }
 int LogSink::start(){
     m_isRunning = true;
