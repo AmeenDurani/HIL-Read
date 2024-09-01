@@ -15,4 +15,4 @@
  - Follows best practices, implemented as a class
  - Must be thread-safe for concurrent/parallel threading operations
  - Use consumer-producer model to achieve optimized access for data operation
- - Opt. (use a db instead of raw memory space)
+ - Follow-up : Database integration through SQLite3
